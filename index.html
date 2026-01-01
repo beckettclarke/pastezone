@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <title>Pastezone</title>
+  <link rel="stylesheet" href="https://site-assets.fontawesome.com/releases/v7.0.0/css/all.css">
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ItsFoxDev/fa-turbo/css/all.min.css" />
+  <link rel="stylesheet" href="https://beckettclarke.github.io/resources/fonts/satoshi/import.css">
   <meta name="viewport" content="width=device-width">
   <link rel="stylesheet" href="./style.css">
   <link href="img/light.ico" rel="icon" media="(prefers-color-scheme: dark)" />
@@ -13,21 +14,73 @@
   <link rel="apple-touch-icon" href="img/app.png">
 </head>
 <body>
+  <img src="/img/bglowres.jpeg" id="background">
+  <!-- Credit: Zac Ong on Unsplash -->
   <app>
-    <div id="top">
-      <h1>
-        <i class="fas fa-clipboard"></i>
-        PasteZone
-      </h1>
+    <div id="header">
+      <h1><i class="fas fa-clipboard"></i> Pastezone <span class="half">3</span></h1>
       <div id="btns">
-        <button onclick="speakZone();"><i class="fas fa-volume"></i></button>
-        <button onclick="copyZText();"><i class="fas fa-clone"></i></button>
-        <button onclick="wordCount();"><i class="fas fa-tally"></i></button>
-        <button onclick="clearZone();"><i class="fas fa-trash"></i></button>
-        <button onclick="exportTXT();"><i class="fas fa-arrow-down-to-line"></i></button>
+        <button onclick="document.getElementById('toolsc').classList.add('active');"><i class="far fa-bars"></i></button>
+        <!-- <button onclick="speakZone();"><i class="far fa-volume"></i> Read</button> -->
+        <button onclick="copyZText();"><i class="far fa-clone"></i>Copy</button>
+        <!-- <button onclick="wordCount();"><i class="far fa-tally"></i>Wordcount</button> -->
+        <button onclick="clearZone();"><i class="far fa-trash"></i>Clear</button>
+        <button onclick="exportTXT();"><i class="far fa-arrow-down-to-line"></i>Export</button>
       </div>
     </div>
     <textarea class="save" id="zone"></textarea>
+    <div id="toolsc">
+      <div id="toolsmenu">
+        <div id="toolsheader">
+          <i class="far fa-wrench"></i> More Tools
+          <button id="closetools" onclick="document.getElementById('toolsc').classList.remove('active');"><i class="far fa-xmark"></i></button>
+        </div>
+        
+        <div id="toolscontent" class="cwr">
+          <div style="display:flex;align-items: center;gap:3px; margin:10px 0px 0px 0px;justify-self: center;">
+            <button id="closewhenrun" onclick="document.getElementById('toolscontent').classList.toggle('cwr')"><i class="fas fa-check"></i></button><b style="opacity:.8;font-size:10px">CLOSE WHEN RUN</b>
+          </div>
+          <!--  -->
+          <div class="tool">
+            <span><i class="far fa-volume"></i> Text to Speech</span>
+            <button onclick="tool('speakZone',this)" class="run"><span class="p1 show"><i class="far fa-play"></i> Run</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
+          </div>
+          <!--  -->
+          <div class="tool">
+            <span><i class="far fa-tally"></i> Word Count</span>
+            <button onclick="tool('wordCount',this)" class="run"><span class="p1 show"><i class="far fa-play"></i> Run</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
+          </div>
+          <!--  -->
+          <div class="tool">
+            <span><i class="far fa-arrow-turn-down-left"></i> Remove Line Breaks</span>
+            <button onclick="tool('removeLineBreaks',this)" class="run"><span class="p1 show"><i class="far fa-play"></i> Run</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
+          </div>
+          <!--  -->
+          <div class="tool">
+            <span><i class="far fa-link"></i> URL Encode</span>
+            <div>
+              <button onclick="tool('urlEncode',this)" class="run"><span class="p1 show">Encode</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
+              <button onclick="tool('urlDecode',this)" class="run"><span class="p1 show">Decode</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
+            </div>
+          </div>
+          <!--  -->
+          <div class="tool">
+            <span><i class="far fa-symbols"></i> Base64 Encode</span>
+            <div>
+              <button onclick="tool('base64Encode',this)" class="run"><span class="p1 show">Encode</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
+              <button onclick="tool('base64Decode',this)" class="run"><span class="p1 show">Decode</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
+            </div>
+          </div>
+          <!--  -->
+          <span style="font-weight:bold;opacity:.6;font-size:12px;margin-top:10px;display:block;text-align:center;">More tools (hopefully) coming soon</span>
+        </div>
+        <a href="https://beckettclarke.ca" id="toolsfooter">
+          <img height="16" src="https://beckettclarke.ca/icons/logo.svg"> Made by Beckett Clarke
+        </a>
+        <span style="text-align:center;font-size:10px;opacity:.6;">Background by Zac Ong on Unsplash, Alerts from SweetAlert</span>
+      </div>
+
+    </div>
   </app>
 </body>
 </html>
