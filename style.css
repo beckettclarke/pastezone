@@ -247,6 +247,44 @@ h1{
   opacity: 1;
 }
 
+#replace-panel{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .25s ease, padding .25s ease;
+  padding:0 5px;
+}
+#replace-panel.open{
+  max-height:130px;
+  padding:4px 5px 8px;
+}
+#replace-panel input{
+  background:transparent;
+  border:1px solid var(--border);
+  border-radius:5px;
+  padding:5px 8px;
+  font-size:12px;
+  outline:none;
+  transition:border .1s ease;
+}
+#replace-panel input:focus{
+  border-color:rgba(255,255,255,0.35);
+}
+#replace-submit{
+  background:radial-gradient(ellipse at center bottom, rgba(34,197,94,0.176) 0%, transparent 80%);
+  border:1px solid var(--border);
+  border-radius:5px;
+  padding:5px 10px;
+  font-size:12px;
+  cursor:pointer;
+  transition:border .1s ease;
+}
+#replace-submit:hover{
+  border-color:rgba(255,255,255,0.35);
+}
+
 #toolsfooter{
   -webkit-user-drag: none;
   user-select: none;

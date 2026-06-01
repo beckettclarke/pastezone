@@ -57,6 +57,16 @@
           </div>
           <!--  -->
           <div class="tool">
+            <span><i class="far fa-magnifying-glass"></i> Replace Text</span>
+            <button onclick="toggleReplacePanel()" class="run" id="replace-run-btn"><span class="p1 show"><i class="far fa-play"></i> Run</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
+          </div>
+          <div id="replace-panel">
+            <input id="replace-find" placeholder="Find..." autocomplete="off">
+            <input id="replace-with" placeholder="Replace with..." autocomplete="off">
+            <button onclick="doReplace()" id="replace-submit">Replace All</button>
+          </div>
+          <!--  -->
+          <div class="tool">
             <span><i class="far fa-link"></i> URL Encode</span>
             <div>
               <button onclick="tool('urlEncode',this)" class="run"><span class="p1 show">Encode</span><span class="p2"><i class="fas fa-spinner-third fa-spin"></i></span><span class="p3"><i class="far fa-check"></i> Done</span></button>
