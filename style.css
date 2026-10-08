@@ -498,6 +498,7 @@ body.md #editor{visibility:hidden}
   -webkit-user-drag:none;
 }
 .pop-foot:hover{color:var(--text)}
+.pop-foot[hidden]{display:none}
 .pop-foot > span{
   flex-basis:100%;
   text-align:center;

@@ -499,6 +499,7 @@ var replaceWith = document.getElementById('replace-with');
 var replaceCount = document.getElementById('replace-count');
 function showReplace(show){
   document.getElementById('tools-main').hidden = show;
+  document.getElementById('tools-foot').hidden = show;
   document.getElementById('replace-panel').hidden = !show;
   if (show){
     var sel = zone.value.slice(zone.selectionStart, zone.selectionEnd);
