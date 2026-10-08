@@ -537,10 +537,10 @@ var DEFAULTS = {
   font:'sans',
   size:18,
   leading:1.7,
-  width:760,
+  width:900,
   dim:0.42,
   anim:'glow',
-  pinBar:false,
+  pinBar:true,
   spellcheck:false,
   closeAfterRun:true
 };
