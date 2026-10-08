@@ -13,7 +13,7 @@
   <link rel="apple-touch-icon" href="img/app.png">
   <script defer src="./script.js"></script>
 </head>
-<body>
+<body class="plain" data-anim="glow">
   <!-- Credit: Zac Ong on Unsplash -->
   <img src="img/bglowres.jpeg" id="background" alt="">
   <div id="scrim"></div>
@@ -32,7 +32,10 @@
 
   <main id="stage">
     <div id="editor">
-      <textarea id="zone" placeholder="Paste or write anything..." spellcheck="false"></textarea>
+      <div id="sheet">
+        <div id="mirror" aria-hidden="true"></div>
+        <textarea id="zone" placeholder="Paste or write anything..." spellcheck="false"></textarea>
+      </div>
     </div>
   </main>
 

@@ -140,7 +140,10 @@ body.pin-bar #bar{
   background:var(--glass-line);
 }
 
-/* ---------- Editor ---------- */
+/* ---------- Editor ----------
+   Animated mode: #editor scrolls; the textarea (transparent text) sits on top of
+   #mirror in one grid cell and grows with it, so both always wrap identically.
+   Plain mode (animations off or very large text): the textarea scrolls by itself. */
 #stage{
   position:fixed;
   inset:0;
@@ -148,40 +151,79 @@ body.pin-bar #bar{
 #editor{
   position:absolute;
   inset:0;
+  overflow-y:auto;
+  /* keeps the caret clear of the faded edges while typing */
+  scroll-padding:calc(var(--bar-h) + 16px) 0 140px;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.18) transparent;
   -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 calc(var(--bar-h) + 12px), #000 calc(100% - 48px), transparent 100%);
           mask-image:linear-gradient(to bottom, transparent 0, #000 calc(var(--bar-h) + 12px), #000 calc(100% - 48px), transparent 100%);
 }
-#zone{
-  position:absolute;
-  inset:0;
-  width:100%;
-  height:100%;
+#sheet{
+  display:grid;
+  min-height:100%;
+}
+#zone,
+#mirror{
+  grid-area:1 / 1;
   margin:0;
   border:none;
-  outline:none;
-  resize:none;
-  background:transparent;
-  color:var(--text);
-  caret-color:var(--accent);
   font-family:var(--font);
   font-size:var(--size);
   line-height:var(--leading);
   letter-spacing:.005em;
   padding:calc(var(--bar-h) + 28px) max(var(--gutter), calc((100% - var(--measure)) / 2)) 40vh;
-  overflow-y:auto;
   white-space:pre-wrap;
   overflow-wrap:break-word;
   word-break:normal;
   tab-size:4;
   text-shadow:0 1px 12px rgba(0,0,0,.35);
-  scrollbar-width:thin;
-  scrollbar-color:rgba(255,255,255,.18) transparent;
+}
+#mirror{
+  color:var(--text);
+  pointer-events:none;
+  user-select:none;
+}
+#zone{
+  width:100%;
+  min-height:100%;
+  outline:none;
+  resize:none;
+  overflow:hidden;
+  background:transparent;
+  color:transparent;
+  -webkit-text-fill-color:transparent;
+  text-shadow:none;
+  caret-color:var(--accent);
 }
 #zone::placeholder{
   color:var(--faint);
+  -webkit-text-fill-color:var(--faint);
   opacity:1;
 }
 #zone::selection{background:color-mix(in srgb, var(--accent) 38%, transparent)}
+
+body.plain #editor{overflow:hidden}
+body.plain #sheet{height:100%}
+body.plain #mirror{display:none}
+body.plain #zone{
+  height:100%;
+  overflow-y:auto;
+  color:var(--text);
+  -webkit-text-fill-color:var(--text);
+  text-shadow:0 1px 12px rgba(0,0,0,.35);
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.18) transparent;
+}
+
+/* Freshly inserted text. Only a "from" frame, so each span settles on its normal style. */
+#mirror .pz-new{animation:pz-glow .6s var(--ease) both}
+[data-anim="blur"] #mirror .pz-new{animation-name:pz-blur}
+[data-anim="fade"] #mirror .pz-new{animation-name:pz-fade}
+#mirror .pz-bulk{animation:pz-fade .5s ease both}
+@keyframes pz-glow{from{color:var(--accent);text-shadow:0 0 14px var(--accent)}}
+@keyframes pz-blur{from{color:transparent;text-shadow:0 0 12px var(--text)}}
+@keyframes pz-fade{from{opacity:0}}
 
 /* ---------- Toasts ---------- */
 #toasts{
