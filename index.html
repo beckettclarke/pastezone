@@ -24,6 +24,8 @@
       <span id="stats"></span>
     </div>
     <nav id="btns">
+      <button id="tools-btn" title="Tools (⌘K)" onclick="toggleMenu('tools')" aria-haspopup="dialog"><i class="far fa-grid-2"></i><span>Tools</span></button>
+      <div class="sep"></div>
       <button id="copy-btn" title="Copy all" onclick="copyZText()"><i class="far fa-clone"></i><span>Copy</span></button>
       <button id="clear-btn" title="Clear" onclick="clearZone()"><i class="far fa-trash"></i><span>Clear</span></button>
       <button id="export-btn" title="Download as a file" onclick="exportTXT()"><i class="far fa-arrow-down-to-line"></i><span>Export</span></button>
@@ -38,6 +40,33 @@
       </div>
     </div>
   </main>
+
+  <div id="tools" class="pop" role="dialog" aria-label="Tools">
+    <div id="tools-main">
+      <div class="pop-search">
+        <i class="far fa-magnifying-glass"></i>
+        <input id="tool-search" placeholder="Search tools..." autocomplete="off" spellcheck="false">
+      </div>
+      <div id="tool-grid"></div>
+      <p id="tool-empty" hidden>No tools match that.</p>
+    </div>
+
+    <form id="replace-panel" hidden onsubmit="doReplace(); return false;">
+      <div class="pop-title">
+        <button type="button" class="icon-btn" title="Back to tools" onclick="showReplace(false)"><i class="far fa-arrow-left"></i></button>
+        Find &amp; replace
+        <span id="replace-count"></span>
+      </div>
+      <input id="replace-find" placeholder="Find..." autocomplete="off" spellcheck="false">
+      <input id="replace-with" placeholder="Replace with..." autocomplete="off" spellcheck="false">
+      <button type="submit" class="primary">Replace all</button>
+    </form>
+
+    <a href="https://beckettclarke.ca" class="pop-foot">
+      <img height="14" src="https://beckettclarke.ca/icons/logo.svg" alt=""> Made by Beckett Clarke
+      <span>Background by Zac Ong on Unsplash</span>
+    </a>
+  </div>
 
   <div id="toasts" aria-live="polite"></div>
 </body>

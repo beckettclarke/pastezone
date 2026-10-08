@@ -206,6 +206,251 @@ function toast(message, icon, opts){
   return el;
 }
 
+// ---------- Menus ----------
+var openMenuName = null;
+function toggleMenu(name){
+  if (openMenuName === name) closeMenus();
+  else openMenu(name);
+}
+function openMenu(name){
+  closeMenus();
+  openMenuName = name;
+  document.getElementById(name).classList.add('open');
+  document.getElementById(name + '-btn').classList.add('on');
+  document.body.classList.add('menu-open');
+  if (name === 'tools'){
+    showReplace(false);
+    toolSearch.value = '';
+    filterTools();
+    if (matchMedia('(hover:hover)').matches) toolSearch.focus();
+  }
+}
+function closeMenus(){
+  if (!openMenuName) return;
+  document.getElementById(openMenuName).classList.remove('open');
+  document.getElementById(openMenuName + '-btn').classList.remove('on');
+  document.body.classList.remove('menu-open');
+  openMenuName = null;
+}
+document.addEventListener('pointerdown', function(e){
+  if (openMenuName && !e.target.closest('.pop, #btns')) closeMenus();
+});
+document.addEventListener('keydown', function(e){
+  var k = e.key.toLowerCase();
+  if (e.key === 'Escape' && openMenuName){
+    closeMenus();
+    zone.focus();
+  } else if ((e.metaKey || e.ctrlKey) && k === 'k'){
+    e.preventDefault();
+    toggleMenu('tools');
+  }
+});
+
+// ---------- Tools ----------
+var closeAfterRun = true;
+
+// Runs fn on the selection if there is one, otherwise on everything.
+function transformText(fn, label){
+  var s = zone.selectionStart, e = zone.selectionEnd;
+  var whole = s === e;
+  if (whole){ s = 0; e = zone.value.length; }
+  var input = zone.value.slice(s, e);
+  if (!input) return toast('Nothing to ' + label.toLowerCase(), 'circle-exclamation');
+  var out;
+  try{ out = fn(input); }catch(err){ return toast(err.message || "Couldn't " + label.toLowerCase(), 'circle-exclamation', {error:true}); }
+  if (out === input) return toast('No changes', 'circle-check');
+  replaceRange(s, e, out);
+  if (!whole) zone.setSelectionRange(s, s + out.length);
+  toast(label + (whole ? '' : ' (selection)'), 'check');
+}
+
+function lines(fn){
+  return function(text){ return fn(text.split(/\r?\n/)).join('\n'); };
+}
+var collator = new Intl.Collator(undefined, {numeric:true, sensitivity:'base'});
+
+function base64EncodeText(text){
+  var bytes = new TextEncoder().encode(text), bin = '';
+  for (var i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+  return btoa(bin);
+}
+function base64DecodeText(text){
+  var bin;
+  try{ bin = atob(text.replace(/\s+/g, '')); }catch(e){ throw new Error("That isn't valid Base64"); }
+  var bytes = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+
+var TOOLS = [
+  {group:'Text', id:'speak', name:'Read aloud', icon:'volume', run:speakZone},
+  {group:'Text', id:'stats', name:'Word count', icon:'tally', run:wordCount},
+  {group:'Text', id:'replace', name:'Find & replace', icon:'magnifying-glass', keep:true, run:function(){ showReplace(true); }},
+
+  {group:'Transform', id:'upper', name:'UPPERCASE', glyph:'AA', run:function(){ transformText(function(t){ return t.toUpperCase(); }, 'Uppercased'); }},
+  {group:'Transform', id:'lower', name:'lowercase', glyph:'aa', run:function(){ transformText(function(t){ return t.toLowerCase(); }, 'Lowercased'); }},
+  {group:'Transform', id:'title', name:'Title Case', glyph:'Aa', run:function(){
+    transformText(function(t){
+      return t.toLowerCase().replace(/(^|[\s\-\/("'\[])(\p{L})/gu, function(m, a, b){ return a + b.toUpperCase(); });
+    }, 'Title cased');
+  }},
+  {group:'Transform', id:'breaks', name:'Remove line breaks', icon:'arrow-turn-down-left', run:function(){
+    transformText(function(t){ return t.replace(/[ \t]*(\r\n|\n|\r)+[ \t]*/g, ' '); }, 'Removed line breaks');
+  }},
+  {group:'Transform', id:'trim', name:'Trim whitespace', icon:'broom', run:function(){
+    transformText(function(t){ return t.replace(/[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n').trim(); }, 'Trimmed whitespace');
+  }},
+  {group:'Transform', id:'sort', name:'Sort lines', icon:'arrow-down-a-z', run:function(){
+    transformText(lines(function(l){ return l.sort(collator.compare); }), 'Sorted lines');
+  }},
+
+  {group:'Encode', id:'urlenc', name:'URL encode', icon:'link', run:function(){ transformText(encodeURI, 'URL encoded'); }},
+  {group:'Encode', id:'urldec', name:'URL decode', icon:'link-slash', run:function(){
+    transformText(function(t){ try{ return decodeURI(t); }catch(e){ throw new Error("That isn't valid URL encoding"); } }, 'URL decoded');
+  }},
+  {group:'Encode', id:'b64enc', name:'Base64 encode', icon:'symbols', run:function(){ transformText(base64EncodeText, 'Base64 encoded'); }},
+  {group:'Encode', id:'b64dec', name:'Base64 decode', icon:'lock-open', run:function(){ transformText(base64DecodeText, 'Base64 decoded'); }},
+  {group:'Encode', id:'json', name:'Format JSON', icon:'brackets-curly', run:function(){
+    transformText(function(t){
+      try{ return JSON.stringify(JSON.parse(t), null, 2); }catch(e){ throw new Error("That isn't valid JSON"); }
+    }, 'Formatted JSON');
+  }},
+  {group:'Encode', id:'jsonmin', name:'Minify JSON', icon:'brackets-square', run:function(){
+    transformText(function(t){
+      try{ return JSON.stringify(JSON.parse(t)); }catch(e){ throw new Error("That isn't valid JSON"); }
+    }, 'Minified JSON');
+  }}
+];
+
+var toolGrid = document.getElementById('tool-grid');
+var toolSearch = document.getElementById('tool-search');
+var toolEmpty = document.getElementById('tool-empty');
+
+function buildTools(){
+  var group = null;
+  TOOLS.forEach(function(t){
+    if (t.group !== group){
+      group = t.group;
+      var label = document.createElement('div');
+      label.className = 'group-label';
+      label.dataset.group = group;
+      label.textContent = group;
+      toolGrid.append(label);
+    }
+    var b = document.createElement('button');
+    b.className = 'tile';
+    b.dataset.group = t.group;
+    b.dataset.tool = t.id;
+    var ico = document.createElement('span');
+    ico.className = 'ico';
+    if (t.glyph){
+      ico.innerHTML = '<span class="glyph"></span>';
+      ico.firstChild.textContent = t.glyph;
+    } else {
+      ico.innerHTML = '<i class="far fa-' + t.icon + '"></i>';
+    }
+    var name = document.createElement('span');
+    name.className = 'name';
+    name.textContent = t.name;
+    b.append(ico, name);
+    b.onclick = function(){ runTool(t, b); };
+    t.el = b;
+    toolGrid.append(b);
+  });
+}
+
+function runTool(t, el){
+  t.run();
+  el.classList.remove('done');
+  void el.offsetWidth;
+  el.classList.add('done');
+  if (!t.keep && closeAfterRun) closeMenus();
+}
+
+function filterTools(){
+  var q = toolSearch.value.trim().toLowerCase();
+  var shown = {};
+  var any = false;
+  TOOLS.forEach(function(t){
+    var match = !q || (t.name + ' ' + t.group).toLowerCase().indexOf(q) !== -1;
+    t.el.hidden = !match;
+    t.el.classList.toggle('hit', !!q && match && !any);
+    if (match){ shown[t.group] = true; any = true; }
+  });
+  toolGrid.querySelectorAll('.group-label').forEach(function(l){ l.hidden = !shown[l.dataset.group]; });
+  toolEmpty.hidden = any;
+}
+toolSearch.addEventListener('input', filterTools);
+toolSearch.addEventListener('keydown', function(e){
+  if (e.key !== 'Enter') return;
+  var first = TOOLS.find(function(t){ return !t.el.hidden; });
+  if (first) runTool(first, first.el);
+});
+
+function wordCount(){
+  var text = zone.value;
+  var words = countWords(text);
+  var lineCount = text ? text.split('\n').length : 0;
+  var minutes = Math.max(1, Math.round(words / 230));
+  toast(plural(words, 'word') + ' · ' + plural(text.length, 'character') + ' · ' + plural(lineCount, 'line') + (words ? ' · ~' + minutes + ' min read' : ''), 'tally', {duration:5000});
+}
+
+function speakZone(){
+  var tile = TOOLS[0].el;
+  if (speechSynthesis.speaking){
+    speechSynthesis.cancel();
+    return;
+  }
+  var text = zone.value.slice(zone.selectionStart, zone.selectionEnd) || zone.value;
+  if (!text.trim()) return toast('Nothing to read', 'circle-exclamation');
+  var utterance = new SpeechSynthesisUtterance(text);
+  utterance.onend = utterance.onerror = function(){
+    tile.querySelector('.name').textContent = 'Read aloud';
+    tile.querySelector('i').className = 'far fa-volume';
+  };
+  speechSynthesis.speak(utterance);
+  tile.querySelector('.name').textContent = 'Stop reading';
+  tile.querySelector('i').className = 'far fa-stop';
+  toast('Reading aloud', 'volume', {action:{label:'Stop', fn:function(){ speechSynthesis.cancel(); }}});
+}
+
+// Find & replace
+var replaceFind = document.getElementById('replace-find');
+var replaceWith = document.getElementById('replace-with');
+var replaceCount = document.getElementById('replace-count');
+function showReplace(show){
+  document.getElementById('tools-main').hidden = show;
+  document.getElementById('replace-panel').hidden = !show;
+  if (show){
+    var sel = zone.value.slice(zone.selectionStart, zone.selectionEnd);
+    if (sel && sel.indexOf('\n') === -1) replaceFind.value = sel;
+    updateReplaceCount();
+    replaceFind.focus();
+    replaceFind.select();
+  }
+}
+function countMatches(find){
+  if (!find) return 0;
+  var n = 0, i = zone.value.indexOf(find);
+  while (i !== -1){ n++; i = zone.value.indexOf(find, i + find.length); }
+  return n;
+}
+function updateReplaceCount(){
+  var f = replaceFind.value;
+  replaceCount.textContent = f ? plural(countMatches(f), 'match').replace('matchs', 'matches') : '';
+}
+replaceFind.addEventListener('input', updateReplaceCount);
+function doReplace(){
+  var find = replaceFind.value;
+  if (!find) return replaceFind.focus();
+  var n = countMatches(find);
+  if (!n) return toast('No matches for “' + find + '”', 'circle-exclamation');
+  setzone(zone.value.split(find).join(replaceWith.value));
+  toast('Replaced ' + plural(n, 'match').replace('matchs', 'matches'), 'magnifying-glass');
+  replaceFind.value = replaceWith.value = '';
+  closeMenus();
+}
+
 // ---------- Actions ----------
 function copyZText(){
   if (!zone.value) return toast('Nothing to copy', 'circle-exclamation');
@@ -245,6 +490,7 @@ function exportTXT(){
 // ---------- Init ----------
 var storedValue = readStore(key);
 if (storedValue) zone.value = storedValue;
+buildTools();
 setAnimStyle(animStyle);
 if (!plain && zone.value){
   // Fade the saved text in on load.
