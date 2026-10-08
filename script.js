@@ -530,6 +530,99 @@ function doReplace(){
   closeMenus();
 }
 
+// ---------- Settings ----------
+var DEFAULTS = {
+  accent:'#7cc4ff',
+  font:'sans',
+  size:18,
+  leading:1.7,
+  width:760,
+  dim:0.42,
+  blur:28,
+  anim:'glow',
+  pinBar:false,
+  spellcheck:false,
+  closeAfterRun:true
+};
+var FONTS = {
+  sans:'"Satoshi", system-ui, sans-serif',
+  serif:'"Newsreader", Georgia, serif',
+  mono:'"JetBrains Mono", ui-monospace, monospace'
+};
+var FORMAT = {
+  size:function(v){ return v + 'px'; },
+  leading:function(v){ return (+v).toFixed(2); },
+  width:function(v){ return v + 'px'; },
+  dim:function(v){ return Math.round(v * 100) + '%'; },
+  blur:function(v){ return v + 'px'; }
+};
+if (matchMedia('(prefers-reduced-motion: reduce)').matches) DEFAULTS.anim = 'off';
+var settings = Object.assign({}, DEFAULTS);
+try{ Object.assign(settings, JSON.parse(readStore('pastezone-settings')) || {}); }catch(e){}
+
+function applySettings(){
+  var root = document.documentElement.style;
+  root.setProperty('--accent', settings.accent);
+  root.setProperty('--font', FONTS[settings.font] || FONTS.sans);
+  root.setProperty('--size', settings.size + 'px');
+  root.setProperty('--leading', settings.leading);
+  root.setProperty('--measure', settings.width + 'px');
+  root.setProperty('--dim', settings.dim);
+  root.setProperty('--blur', settings.blur + 'px');
+  document.body.classList.toggle('pin-bar', settings.pinBar);
+  zone.spellcheck = settings.spellcheck;
+  closeAfterRun = settings.closeAfterRun;
+  if (settings.anim !== animStyle) setAnimStyle(settings.anim);
+  syncSettingsUI();
+}
+
+function syncSettingsUI(){
+  document.querySelectorAll('#settings [data-setting]').forEach(function(el){
+    var k = el.dataset.setting, v = settings[k];
+    if (el.type === 'range'){
+      el.value = v;
+      el.style.setProperty('--fill', ((v - el.min) / (el.max - el.min) * 100) + '%');
+      var out = document.querySelector('#settings output[data-for="' + k + '"]');
+      if (out) out.textContent = FORMAT[k](v);
+    } else if (el.classList.contains('check')){
+      el.classList.toggle('on', !!v);
+      el.setAttribute('aria-pressed', !!v);
+    } else {
+      el.querySelectorAll('button').forEach(function(b){
+        b.classList.toggle('on', b.dataset.value === v);
+        b.setAttribute('aria-pressed', b.dataset.value === v);
+      });
+    }
+  });
+}
+
+function setSetting(k, v){
+  settings[k] = v;
+  applySettings();
+  writeStore('pastezone-settings', JSON.stringify(settings));
+}
+
+function resetSettings(){
+  settings = Object.assign({}, DEFAULTS);
+  applySettings();
+  writeStore('pastezone-settings', JSON.stringify(settings));
+  toast('Settings reset', 'arrows-rotate');
+}
+
+document.querySelectorAll('#settings [data-setting]').forEach(function(el){
+  var k = el.dataset.setting;
+  if (el.type === 'range'){
+    el.addEventListener('input', function(){ setSetting(k, parseFloat(el.value)); });
+  } else if (el.classList.contains('check')){
+    el.addEventListener('click', function(){ setSetting(k, !settings[k]); });
+  } else {
+    el.addEventListener('click', function(e){
+      var b = e.target.closest('button');
+      if (b) setSetting(k, b.dataset.value);
+    });
+  }
+});
+
 // ---------- Actions ----------
 function copyZText(){
   if (!zone.value) return toast('Nothing to copy', 'circle-exclamation');
@@ -570,7 +663,8 @@ function exportTXT(){
 var storedValue = readStore(key);
 if (storedValue) zone.value = storedValue;
 buildTools();
-setAnimStyle(animStyle);
+setAnimStyle(settings.anim);
+applySettings();
 if (readStore('pastezone-md') === '1') setMarkdown(true, true);
 if (!plain && zone.value){
   // Fade the saved text in on load.

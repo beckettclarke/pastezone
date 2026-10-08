@@ -20,7 +20,7 @@
 
   <header id="bar">
     <div id="brand">
-      <i class="fas fa-clipboard"></i> Pastezone <span class="half">4</span>
+      <i class="fas fa-clipboard"></i><span class="name">Pastezone <span class="half">4</span></span>
       <span id="stats"></span>
     </div>
     <nav id="btns">
@@ -33,6 +33,8 @@
       <button id="copy-btn" title="Copy all" onclick="copyZText()"><i class="far fa-clone"></i><span>Copy</span></button>
       <button id="clear-btn" title="Clear" onclick="clearZone()"><i class="far fa-trash"></i><span>Clear</span></button>
       <button id="export-btn" title="Download as a file" onclick="exportTXT()"><i class="far fa-arrow-down-to-line"></i><span>Export</span></button>
+      <div class="sep"></div>
+      <button id="settings-btn" title="Customize" onclick="toggleMenu('settings')" aria-haspopup="dialog"><i class="far fa-sliders"></i></button>
     </nav>
   </header>
 
@@ -71,6 +73,71 @@
       <img height="14" src="https://beckettclarke.ca/icons/logo.svg" alt=""> Made by Beckett Clarke
       <span>Background by Zac Ong on Unsplash</span>
     </a>
+  </div>
+
+  <div id="settings" class="pop" role="dialog" aria-label="Customize">
+    <div class="pop-title">
+      Customize
+      <button type="button" class="link-btn" onclick="resetSettings()">Reset</button>
+    </div>
+
+    <div class="field">
+      <span class="label">Accent</span>
+      <div class="swatches" data-setting="accent">
+        <button style="--c:#7cc4ff" data-value="#7cc4ff" title="Sky"></button>
+        <button style="--c:#6ee7b7" data-value="#6ee7b7" title="Mint"></button>
+        <button style="--c:#c4a7ff" data-value="#c4a7ff" title="Lilac"></button>
+        <button style="--c:#ff9ec7" data-value="#ff9ec7" title="Rose"></button>
+        <button style="--c:#ffc46b" data-value="#ffc46b" title="Amber"></button>
+        <button style="--c:#f2f1f5" data-value="#f2f1f5" title="White"></button>
+      </div>
+    </div>
+
+    <div class="field">
+      <span class="label">Font</span>
+      <div class="seg" data-setting="font">
+        <button data-value="sans" style="font-family:Satoshi">Sans</button>
+        <button data-value="serif" style="font-family:Newsreader">Serif</button>
+        <button data-value="mono" style="font-family:'JetBrains Mono'">Mono</button>
+      </div>
+    </div>
+
+    <label class="field">
+      <span class="label">Text size <output data-for="size"></output></span>
+      <input type="range" data-setting="size" min="14" max="28" step="1">
+    </label>
+    <label class="field">
+      <span class="label">Line spacing <output data-for="leading"></output></span>
+      <input type="range" data-setting="leading" min="1.3" max="2.2" step="0.05">
+    </label>
+    <label class="field">
+      <span class="label">Text width <output data-for="width"></output></span>
+      <input type="range" data-setting="width" min="480" max="1400" step="20">
+    </label>
+    <label class="field">
+      <span class="label">Background dim <output data-for="dim"></output></span>
+      <input type="range" data-setting="dim" min="0" max="0.85" step="0.01">
+    </label>
+    <label class="field">
+      <span class="label">Background blur <output data-for="blur"></output></span>
+      <input type="range" data-setting="blur" min="0" max="60" step="1">
+    </label>
+
+    <div class="field">
+      <span class="label">Typing animation</span>
+      <div class="seg" data-setting="anim">
+        <button data-value="glow">Glow</button>
+        <button data-value="blur">Blur</button>
+        <button data-value="fade">Fade</button>
+        <button data-value="off">Off</button>
+      </div>
+    </div>
+
+    <div class="checks">
+      <button class="check" data-setting="pinBar"><span>Always show toolbar</span><span class="switch"></span></button>
+      <button class="check" data-setting="spellcheck"><span>Spellcheck</span><span class="switch"></span></button>
+      <button class="check" data-setting="closeAfterRun"><span>Close tools after running one</span><span class="switch"></span></button>
+    </div>
   </div>
 
   <div id="toasts" aria-live="polite"></div>
