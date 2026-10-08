@@ -1,212 +1,150 @@
 var zone = document.getElementById('zone');
-
-
-// BEGIN CHATGPT CODE - Adds undo/redo functionality for tool actions
-// undo/redo stacks for programmatic changes (kept separate from native browser undo)
-var undoStack = [];
-var redoStack = [];
-var UNDO_LIMIT = 100;
-
-function pushUndoState(value, start, end){
-  undoStack.push({value: value, start: start, end: end});
-  if (undoStack.length > UNDO_LIMIT) undoStack.shift();
-  // new programmatic change invalidates redo history
-  redoStack = [];
-}
-
-function setzone(newValue, opts){
-  opts = opts || {};
-  var push = opts.push !== false; // default true
-  var selStart = (typeof opts.selStart === 'number') ? opts.selStart : null;
-  var selEnd = (typeof opts.selEnd === 'number') ? opts.selEnd : null;
-  if (push){
-    try{ pushUndoState(zone.value, zone.selectionStart, zone.selectionEnd); }catch(e){ pushUndoState(zone.value, 0, 0); }
-  }
-  zone.value = newValue;
-  savezone();
-  if (selStart !== null){
-    try{ zone.selectionStart = selStart; zone.selectionEnd = selEnd; }catch(e){}
-  }
-}
-
-function undo(){
-  if (!undoStack.length) return false;
-  // push current state to redo
-  try{ redoStack.push({value: zone.value, start: zone.selectionStart, end: zone.selectionEnd}); }catch(e){ redoStack.push({value: zone.value, start: 0, end: 0}); }
-  var state = undoStack.pop();
-  setzone(state.value, {push:false, selStart: state.start, selEnd: state.end});
-  return true;
-}
-
-function redo(){
-  if (!redoStack.length) return false;
-  try{ undoStack.push({value: zone.value, start: zone.selectionStart, end: zone.selectionEnd}); }catch(e){ undoStack.push({value: zone.value, start: 0, end: 0}); }
-  var state = redoStack.pop();
-  setzone(state.value, {push:false, selStart: state.start, selEnd: state.end});
-  return true;
-}
-document.addEventListener('keydown', function(e){
-  var key = e.key ? e.key.toLowerCase() : '';
-  if ((e.ctrlKey || e.metaKey) && key === 'z'){
-    if (e.shiftKey){
-      if (redoStack.length){ e.preventDefault(); redo(); }
-    } else {
-      if (undoStack.length){ e.preventDefault(); undo(); }
-    }
-  }
-});
-// END CHATGPT
-
-
-var key = 'pastezone';
-var storedValue = localStorage.getItem(key);
-function savezone(){
-  localStorage.setItem(key, zone.value);
-  cLog('Synced Pastezone with local storage','darkgreen');
-}
-if (storedValue){
-  zone.value = storedValue;
-}
-zone.addEventListener('input', function (){
-  savezone();
-});
+var statsEl = document.getElementById('stats');
 
 function cLog(m,c){
   console.log("%cFoxJS","color: white; background: " + c + "; padding: 2px 6px; border-radius: 3px; margin-right: 5px;",m);
 }
 
-function wordCount() {
- cLog('Starting word count...','darkviolet');
- var text = zone.value;
- var wcount = 0;
- var split = text.split(' ');
- for (var i = 0; i < split.length; i++) {
-  if (split[i] != "") {
-   wcount ++;
-  }
- }
- Swal.fire(
-  'Word count',
-  'Your text has ' + wcount + ' words.',
-  'info'
-);
-cLog('Counted ' + wcount + 'words','darkgreen');
+// ---------- Storage ----------
+function readStore(key){
+  try{ return localStorage.getItem(key); }catch(e){ return null; }
 }
-function clearZone(){
-Swal.fire({
-  title: 'Clear PasteZone?',
-  text: 'You won\'t be able to revert this!',
-  icon: 'warning',
-  showCancelButton: true,
-  confirmButtonColor: '#2eb00b',
-  cancelButtonColor: '#d33',
-  confirmButtonText: 'Yes, clear it!'
-}).then((result) => {
-  if (result.isConfirmed) {
-      setzone('');
-    Swal.fire(
-      'Success!',
-      'Your PasteZone has been cleared.',
-      'success'
-    );
-  }
-});
+function writeStore(key, value){
+  try{ localStorage.setItem(key, value); return true; }catch(e){ return false; }
 }
 
+var key = 'pastezone';
+var saveTimer = null;
+var saveFailed = false;
+function savezone(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(function(){
+    if (writeStore(key, zone.value)){
+      saveFailed = false;
+      cLog('Synced Pastezone with local storage','darkgreen');
+    } else if (!saveFailed){
+      saveFailed = true;
+      toast('Too large to save in this browser — export it to keep it', 'circle-exclamation', {error:true, duration:5000});
+    }
+  }, 250);
+}
+
+// ---------- Editing ----------
+// Changes go through execCommand so they land in the browser's own undo history (⌘Z / ⌘⇧Z).
+function replaceRange(start, end, text){
+  if (start === end && !text) return;
+  zone.focus({preventScroll:true});
+  zone.setSelectionRange(start, end);
+  var ok = false;
+  try{
+    ok = text ? document.execCommand('insertText', false, text) : document.execCommand('delete');
+  }catch(e){}
+  if (!ok){
+    zone.setRangeText(text, start, end, 'end');
+    zone.dispatchEvent(new Event('input', {bubbles:true}));
+  }
+}
+function setzone(newValue){
+  replaceRange(0, zone.value.length, newValue);
+}
+
+// ---------- Stats ----------
+function countWords(text){
+  var words = 0, inWord = false;
+  for (var i = 0; i < text.length; i++){
+    var c = text.charCodeAt(i);
+    var space = c === 32 || c === 10 || c === 9 || c === 13 || c === 160;
+    if (!space && !inWord) words++;
+    inWord = !space;
+  }
+  return words;
+}
+function plural(n, word){
+  return n.toLocaleString() + ' ' + word + (n === 1 ? '' : 's');
+}
+var statsTimer = null;
+function updateStats(){
+  clearTimeout(statsTimer);
+  statsTimer = setTimeout(function(){
+    var text = zone.value;
+    statsEl.textContent = text ? plural(countWords(text), 'word') + ' · ' + plural(text.length, 'char') : '';
+  }, 120);
+}
+
+function onChange(){
+  document.body.classList.toggle('empty', zone.value === '');
+  updateStats();
+  savezone();
+}
+zone.addEventListener('input', onChange);
+
+// ---------- Toasts ----------
+var toastsEl = document.getElementById('toasts');
+function toast(message, icon, opts){
+  opts = opts || {};
+  var el = document.createElement('div');
+  el.className = 'toast' + (opts.error ? ' error' : '');
+  var i = document.createElement('i');
+  i.className = 'far fa-' + (icon || 'check');
+  var span = document.createElement('span');
+  span.textContent = message;
+  el.append(i, span);
+  if (opts.action){
+    var b = document.createElement('button');
+    b.textContent = opts.action.label;
+    b.onclick = function(){ opts.action.fn(); dismiss(); };
+    el.append(b);
+  }
+  while (toastsEl.children.length >= 3) toastsEl.firstChild.remove();
+  toastsEl.append(el);
+  var timer = setTimeout(dismiss, opts.duration || 2400);
+  function dismiss(){
+    clearTimeout(timer);
+    el.classList.add('out');
+    setTimeout(function(){ el.remove(); }, 250);
+  }
+  return el;
+}
+
+// ---------- Actions ----------
 function copyZText(){
-  /* Selects text */ zone.select();
-  /* Copies text */ document.execCommand('copy');
-  /* De-selects text */ window.getSelection().removeAllRanges();
-  Swal.fire('Success!','Pastezone has been copied to clipboard.','success');
-}
-
-function speakZone(){
-  let utterance = new SpeechSynthesisUtterance(zone.value);
-  speechSynthesis.speak(utterance);
-  Swal.fire('Success!','Reading your PasteZone.','success');
-}
-
-function tool(f,e){
-  var p1=e.querySelector('.p1');
-  var p2=e.querySelector('.p2');
-  var p3=e.querySelector('.p3');
-  p1.classList.remove('show');
-  p2.classList.add('show');
-  eval(f+'()');
-  setTimeout(function(){
-    p1.classList.remove('show');
-    p2.classList.remove('show');
-    p3.classList.add('show');
-    setTimeout(function(){
-      p3.classList.remove('show');
-      p1.classList.add('show');
-    },1000);
-  },500);
-  if (document.getElementById('toolscontent').classList.contains('cwr')){
-    document.getElementById('toolsc').classList.remove('active');
+  if (!zone.value) return toast('Nothing to copy', 'circle-exclamation');
+  var done = function(){ toast('Copied to clipboard', 'clone'); };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(zone.value).then(done, legacyCopy);
+  } else {
+    legacyCopy();
   }
+  function legacyCopy(){
+    var s = zone.selectionStart, e = zone.selectionEnd;
+    zone.select();
+    document.execCommand('copy');
+    zone.setSelectionRange(s, e);
+    done();
+  }
+}
+
+function clearZone(){
+  if (!zone.value) return toast('Already empty', 'circle-check');
+  var previous = zone.value;
+  setzone('');
+  toast('Cleared', 'trash', {duration:6000, action:{label:'Undo', fn:function(){ setzone(previous); }}});
 }
 
 function exportTXT(){
-  const link = document.createElement("a");
-  const file = new Blob([zone.value], { type: 'text/plain' });
+  if (!zone.value) return toast('Nothing to export', 'circle-exclamation');
+  var link = document.createElement('a');
+  var file = new Blob([zone.value], {type:'text/plain'});
   link.href = URL.createObjectURL(file);
-  link.download = "pastezone.txt";
+  link.download = 'pastezone.txt';
   link.click();
-  URL.revokeObjectURL(link.href);
-  Swal.fire('Downloaded!','Your pastezone has been downloaded','success');
+  setTimeout(function(){ URL.revokeObjectURL(link.href); }, 1000);
+  toast('Downloaded ' + link.download, 'arrow-down-to-line');
 }
 
-function urlEncode(){
-  setzone(encodeURI(zone.value));
-}
-function urlDecode(){
-  setzone(decodeURI(zone.value));
-}
-
-function base64Encode(){
-  setzone(btoa(zone.value));
-}
-function base64Decode(){
-  setzone(atob(zone.value));
-}
-
-function removeLineBreaks(){
-  setzone(zone.value.replace(/(\r\n|\n|\r)/gm," "));
-}
-
-function toggleReplacePanel() {
-  var panel = document.getElementById('replace-panel');
-  panel.classList.toggle('open');
-  if (panel.classList.contains('open')) {
-    document.getElementById('replace-find').focus();
-  }
-}
-
-function doReplace() {
-  var find = document.getElementById('replace-find').value;
-  if (!find) return;
-  var replace = document.getElementById('replace-with').value;
-  setzone(zone.value.split(find).join(replace));
-  var btn = document.getElementById('replace-run-btn');
-  btn.querySelector('.p1').classList.remove('show');
-  btn.querySelector('.p3').classList.add('show');
-  setTimeout(function() {
-    btn.querySelector('.p3').classList.remove('show');
-    btn.querySelector('.p1').classList.add('show');
-    document.getElementById('replace-panel').classList.remove('open');
-    document.getElementById('replace-find').value = '';
-    document.getElementById('replace-with').value = '';
-  }, 1000);
-  if (document.getElementById('toolscontent').classList.contains('cwr')) {
-    document.getElementById('toolsc').classList.remove('active');
-  }
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  ['replace-find','replace-with'].forEach(function(id) {
-    document.getElementById(id).addEventListener('keydown', function(e) {
-      if (e.key === 'Enter') doReplace();
-    });
-  });
-});
+// ---------- Init ----------
+var storedValue = readStore(key);
+if (storedValue) zone.value = storedValue;
+document.body.classList.toggle('empty', zone.value === '');
+updateStats();
+zone.focus();
