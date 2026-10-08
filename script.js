@@ -539,7 +539,6 @@ var DEFAULTS = {
   leading:1.7,
   width:760,
   dim:0.42,
-  blur:28,
   anim:'glow',
   pinBar:false,
   spellcheck:false,
@@ -554,8 +553,7 @@ var FORMAT = {
   size:function(v){ return v + 'px'; },
   leading:function(v){ return (+v).toFixed(2); },
   width:function(v){ return v + 'px'; },
-  dim:function(v){ return Math.round(v * 100) + '%'; },
-  blur:function(v){ return v + 'px'; }
+  dim:function(v){ return Math.round(v * 100) + '%'; }
 };
 if (matchMedia('(prefers-reduced-motion: reduce)').matches) DEFAULTS.anim = 'off';
 var settings = Object.assign({}, DEFAULTS);
@@ -569,7 +567,6 @@ function applySettings(){
   root.setProperty('--leading', settings.leading);
   root.setProperty('--measure', settings.width + 'px');
   root.setProperty('--dim', settings.dim);
-  root.setProperty('--blur', settings.blur + 'px');
   document.body.classList.toggle('pin-bar', settings.pinBar);
   zone.spellcheck = settings.spellcheck;
   closeAfterRun = settings.closeAfterRun;
