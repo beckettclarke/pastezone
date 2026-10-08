@@ -24,6 +24,10 @@
       <span id="stats"></span>
     </div>
     <nav id="btns">
+      <button id="md-btn" class="toggle" title="Markdown preview (⌘E)" onclick="toggleMarkdown()" aria-pressed="false">
+        <i class="fa-brands fa-markdown"></i><span>Markdown</span><span class="switch"></span>
+      </button>
+      <div class="sep"></div>
       <button id="tools-btn" title="Tools (⌘K)" onclick="toggleMenu('tools')" aria-haspopup="dialog"><i class="far fa-grid-2"></i><span>Tools</span></button>
       <div class="sep"></div>
       <button id="copy-btn" title="Copy all" onclick="copyZText()"><i class="far fa-clone"></i><span>Copy</span></button>
@@ -39,6 +43,7 @@
         <textarea id="zone" placeholder="Paste or write anything..." spellcheck="false"></textarea>
       </div>
     </div>
+    <article id="preview" hidden title="Double-click to edit"></article>
   </main>
 
   <div id="tools" class="pop" role="dialog" aria-label="Tools">

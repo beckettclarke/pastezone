@@ -225,6 +225,93 @@ body.plain #zone{
 @keyframes pz-blur{from{color:transparent;text-shadow:0 0 12px var(--text)}}
 @keyframes pz-fade{from{opacity:0}}
 
+/* ---------- Markdown toggle + preview ---------- */
+.switch{
+  position:relative;
+  width:26px;
+  height:15px;
+  margin-left:2px;
+  border-radius:999px;
+  background:rgba(255,255,255,.16);
+  transition:background-color .25s ease;
+}
+.switch::after{
+  content:"";
+  position:absolute;
+  top:2px;
+  left:2px;
+  width:11px;
+  height:11px;
+  border-radius:50%;
+  background:var(--text);
+  transition:transform .25s var(--ease);
+}
+.toggle[aria-pressed="true"]{color:var(--text) !important}
+.toggle[aria-pressed="true"] .switch{background:var(--accent)}
+.toggle[aria-pressed="true"] .switch::after{transform:translateX(11px);background:#0b0d14}
+
+body.md #editor{visibility:hidden}
+#preview{
+  position:absolute;
+  inset:0;
+  overflow-y:auto;
+  padding:calc(var(--bar-h) + 28px) max(var(--gutter), calc((100% - var(--measure)) / 2)) 30vh;
+  font-family:var(--font);
+  font-size:var(--size);
+  line-height:var(--leading);
+  overflow-wrap:break-word;
+  text-shadow:0 1px 12px rgba(0,0,0,.35);
+  scrollbar-width:thin;
+  scrollbar-color:rgba(255,255,255,.18) transparent;
+  -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 calc(var(--bar-h) + 12px), #000 calc(100% - 48px), transparent 100%);
+          mask-image:linear-gradient(to bottom, transparent 0, #000 calc(var(--bar-h) + 12px), #000 calc(100% - 48px), transparent 100%);
+}
+#preview[hidden]{display:none}
+#preview > *{animation:md-in .45s var(--ease) both;animation-delay:calc(var(--i, 0) * 25ms)}
+@keyframes md-in{from{opacity:0;transform:translateY(6px)}}
+#preview > :first-child{margin-top:0}
+#preview h1,#preview h2,#preview h3,#preview h4{line-height:1.25;margin:1.6em 0 .5em;font-weight:700}
+#preview h1{font-size:2em;letter-spacing:-.01em}
+#preview h2{font-size:1.5em}
+#preview h3{font-size:1.2em}
+#preview h4{font-size:1em}
+#preview p,#preview ul,#preview ol,#preview blockquote,#preview pre,#preview table{margin:0 0 1em}
+#preview ul,#preview ol{padding-left:1.4em}
+#preview li{margin:.2em 0}
+#preview li::marker{color:var(--accent)}
+#preview a{color:var(--accent);text-underline-offset:3px}
+#preview strong{font-weight:700}
+#preview blockquote{
+  padding:.1em 0 .1em 1em;
+  border-left:3px solid var(--accent);
+  color:var(--muted);
+}
+#preview code{
+  font-family:"JetBrains Mono", monospace;
+  font-size:.86em;
+  padding:.12em .38em;
+  border-radius:6px;
+  background:rgba(255,255,255,.08);
+}
+#preview pre{
+  padding:14px 16px;
+  border-radius:12px;
+  background:rgba(0,0,0,.3);
+  border:1px solid var(--glass-line);
+  overflow-x:auto;
+  line-height:1.55;
+  text-shadow:none;
+}
+#preview pre code{padding:0;background:none;font-size:.82em}
+#preview hr{border:none;height:1px;background:var(--glass-line);margin:2em 0}
+#preview img{max-width:100%;border-radius:10px}
+#preview table{border-collapse:collapse;display:block;overflow-x:auto}
+#preview th,#preview td{padding:.4em .8em;border:1px solid var(--glass-line);text-align:left}
+#preview th{background:rgba(255,255,255,.05)}
+#preview input[type="checkbox"]{accent-color:var(--accent);margin:0 .4em 0 0}
+#preview li:has(> input[type="checkbox"]){list-style:none;margin-left:-1.2em}
+#preview .md-empty{color:var(--faint)}
+
 /* ---------- Popovers (tools, settings) ---------- */
 .pop{
   position:fixed;
@@ -470,7 +557,7 @@ body.plain #zone{
 @media (max-width:640px){
   :root{--gutter:18px;--bar-h:56px}
   #bar{padding:0 10px}
-  #btns button > span,
+  #btns button > span:not(.switch),
   #stats{display:none}
   #btns button{padding:0 10px}
   .pop{right:12px}

@@ -36,7 +36,9 @@ function replaceRange(start, end, text){
   zone.focus({preventScroll:true});
   zone.setSelectionRange(start, end);
   var ok = false;
-  try{
+  // execCommand acts on whatever has focus, so only use it if the textarea really got it
+  // (it can't while the Markdown preview hides it).
+  if (document.activeElement === zone) try{
     ok = text ? document.execCommand('insertText', false, text) : document.execCommand('delete');
   }catch(e){}
   if (!ok){
@@ -172,6 +174,7 @@ function updateStats(){
 
 function onChange(){
   trackEdit();
+  renderPreview();
   document.body.classList.toggle('empty', zone.value === '');
   updateStats();
   savezone();
@@ -205,6 +208,82 @@ function toast(message, icon, opts){
   }
   return el;
 }
+
+// ---------- Markdown ----------
+var preview = document.getElementById('preview');
+var mdBtn = document.getElementById('md-btn');
+var markdownOn = false;
+var mdLibs = null;
+
+function loadScript(src){
+  return new Promise(function(resolve, reject){
+    var el = document.createElement('script');
+    el.src = src;
+    el.onload = resolve;
+    el.onerror = reject;
+    document.head.append(el);
+  });
+}
+function loadMarkdownLibs(){
+  if (!mdLibs){
+    mdLibs = Promise.all([
+      loadScript('https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js'),
+      loadScript('https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js')
+    ]).then(function(){
+      marked.setOptions({gfm:true, breaks:true});
+      DOMPurify.addHook('afterSanitizeAttributes', function(node){
+        if (node.tagName === 'A'){ node.setAttribute('target', '_blank'); node.setAttribute('rel', 'noopener noreferrer'); }
+      });
+    }, function(err){
+      mdLibs = null;
+      throw err;
+    });
+  }
+  return mdLibs;
+}
+
+function renderPreview(){
+  if (!markdownOn || !window.marked) return;
+  if (!zone.value.trim()){
+    preview.innerHTML = '<p class="md-empty">Nothing to preview yet. Double-click to start writing.</p>';
+    return;
+  }
+  preview.innerHTML = DOMPurify.sanitize(marked.parse(zone.value));
+  // Stagger the first few blocks in; the rest just appear.
+  for (var i = 0; i < Math.min(preview.children.length, 24); i++) preview.children[i].style.setProperty('--i', i);
+}
+
+function setMarkdown(on, quiet){
+  markdownOn = on;
+  writeStore('pastezone-md', on ? '1' : '0');
+  mdBtn.setAttribute('aria-pressed', on);
+  if (!on){
+    document.body.classList.remove('md');
+    preview.hidden = true;
+    preview.innerHTML = '';
+    zone.focus({preventScroll:true});
+    return;
+  }
+  loadMarkdownLibs().then(function(){
+    if (!markdownOn) return;
+    renderPreview();
+    preview.hidden = false;
+    preview.scrollTop = 0;
+    document.body.classList.add('md');
+  }, function(){
+    setMarkdown(false);
+    if (!quiet) toast("Couldn't load the Markdown renderer — are you offline?", 'circle-exclamation', {error:true});
+  });
+}
+function toggleMarkdown(){ setMarkdown(!markdownOn); }
+
+preview.addEventListener('dblclick', function(){ setMarkdown(false); });
+document.addEventListener('keydown', function(e){
+  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'e'){
+    e.preventDefault();
+    toggleMarkdown();
+  }
+});
 
 // ---------- Menus ----------
 var openMenuName = null;
@@ -481,7 +560,7 @@ function exportTXT(){
   var link = document.createElement('a');
   var file = new Blob([zone.value], {type:'text/plain'});
   link.href = URL.createObjectURL(file);
-  link.download = 'pastezone.txt';
+  link.download = markdownOn ? 'pastezone.md' : 'pastezone.txt';
   link.click();
   setTimeout(function(){ URL.revokeObjectURL(link.href); }, 1000);
   toast('Downloaded ' + link.download, 'arrow-down-to-line');
@@ -492,6 +571,7 @@ var storedValue = readStore(key);
 if (storedValue) zone.value = storedValue;
 buildTools();
 setAnimStyle(animStyle);
+if (readStore('pastezone-md') === '1') setMarkdown(true, true);
 if (!plain && zone.value){
   // Fade the saved text in on load.
   marks = [{start:0, end:zone.value.length, t:performance.now(), bulk:true}];
