@@ -639,11 +639,27 @@ function copyZText(){
   }
 }
 
+var clearDialog = document.getElementById('confirm-clear');
+// Clicking the dimmed backdrop (the dialog element itself, outside the card) cancels.
+clearDialog.addEventListener('click', function(e){
+  if (e.target === clearDialog) clearDialog.close('cancel');
+});
+
 function clearZone(){
   if (!zone.value) return toast('Already empty', 'circle-check');
-  var previous = zone.value;
-  setzone('');
-  toast('Cleared', 'trash', {duration:6000, action:{label:'Undo', fn:function(){ setzone(previous); }}});
+  closeMenus();
+  var words = countWords(zone.value);
+  document.getElementById('confirm-text').textContent =
+    'This erases ' + (words ? plural(words, 'word') : 'everything') + ' in your Pastezone.';
+  clearDialog.returnValue = '';
+  clearDialog.addEventListener('close', function(){
+    if (clearDialog.returnValue !== 'ok') return zone.focus({preventScroll:true});
+    var previous = zone.value;
+    setzone('');
+    toast('Cleared', 'trash', {duration:6000, action:{label:'Undo', fn:function(){ setzone(previous); }}});
+  }, {once:true});
+  clearDialog.showModal();
+  clearDialog.querySelector('.ghost').focus();
 }
 
 function exportTXT(){

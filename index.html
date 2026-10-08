@@ -8,11 +8,11 @@
   <link rel="stylesheet" href="https://beckettclarke.ca/css/fontawesome.css" />
   <link rel="stylesheet" href="https://beckettclarke.github.io/resources/fonts/satoshi/import.css">
   <!-- Bump ?v= whenever style.css or script.js changes so Cloudflare and browsers fetch the new files -->
-  <link rel="stylesheet" href="./style.css?v=4.0">
+  <link rel="stylesheet" href="./style.css?v=4.1">
   <link href="img/light.ico" rel="icon" media="(prefers-color-scheme: dark)" />
   <link href="img/dark.ico" rel="icon" media="(prefers-color-scheme: light)" />
   <link rel="apple-touch-icon" href="img/app.png">
-  <script defer src="./script.js?v=4.0"></script>
+  <script defer src="./script.js?v=4.1"></script>
 </head>
 <body class="plain" data-anim="glow">
   <!-- Credit: Zac Ong on Unsplash -->
@@ -136,6 +136,18 @@
       <button class="check" data-setting="closeAfterRun"><span>Close tools after running one</span><span class="switch"></span></button>
     </div>
   </div>
+
+  <dialog id="confirm-clear" aria-labelledby="confirm-title" aria-describedby="confirm-text">
+    <form method="dialog" class="modal-card">
+      <div class="modal-icon"><i class="far fa-trash"></i></div>
+      <h2 id="confirm-title">Clear Pastezone?</h2>
+      <p id="confirm-text"></p>
+      <div class="modal-actions">
+        <button value="cancel" class="ghost">Cancel</button>
+        <button value="ok" class="danger">Clear</button>
+      </div>
+    </form>
+  </dialog>
 
   <div id="toasts" aria-live="polite"></div>
 </body>

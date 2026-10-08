@@ -641,6 +641,66 @@ body.md #editor{visibility:hidden}
 .check.on .switch{background:var(--accent)}
 .check.on .switch::after{transform:translateX(11px);background:#0b0d14}
 
+/* ---------- Confirm dialog ---------- */
+dialog{
+  padding:0;
+  border:none;
+  background:transparent;
+  color:var(--text);
+  max-width:calc(100vw - 32px);
+  overflow:visible;
+}
+dialog::backdrop{
+  background:rgba(5,7,12,.45);
+  -webkit-backdrop-filter:blur(6px);
+          backdrop-filter:blur(6px);
+}
+dialog[open]{animation:modal-in .28s var(--ease)}
+dialog[open]::backdrop{animation:backdrop-in .28s ease}
+@keyframes modal-in{from{opacity:0;transform:translateY(8px) scale(.96)}}
+@keyframes backdrop-in{from{opacity:0}}
+.modal-card{
+  width:340px;
+  max-width:100%;
+  padding:24px 22px 18px;
+  border-radius:20px;
+  background:var(--glass);
+  border:1px solid var(--glass-line);
+  -webkit-backdrop-filter:blur(24px) saturate(1.5);
+          backdrop-filter:blur(24px) saturate(1.5);
+  box-shadow:0 24px 60px rgba(0,0,0,.5);
+  text-align:center;
+}
+.modal-icon{
+  width:44px;
+  height:44px;
+  margin:0 auto 14px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,107,107,.14);
+  color:#ff8a8a;
+  font-size:18px;
+}
+.modal-card h2{margin:0 0 6px;font-size:17px;font-weight:700}
+.modal-card p{margin:0 0 20px;font-size:13.5px;line-height:1.5;color:var(--muted)}
+.modal-actions{display:flex;gap:8px}
+.modal-actions button{
+  flex:1;
+  height:38px;
+  border:none;
+  border-radius:10px;
+  font-size:14px;
+  font-weight:600;
+  cursor:pointer;
+  transition:background-color .2s ease, filter .2s ease;
+}
+.modal-actions .ghost{background:rgba(255,255,255,.08)}
+.modal-actions .ghost:hover{background:rgba(255,255,255,.14)}
+.modal-actions .danger{background:#ff6b6b;color:#1a0b0b}
+.modal-actions .danger:hover{filter:brightness(1.08)}
+
 /* ---------- Toasts ---------- */
 #toasts{
   position:fixed;
